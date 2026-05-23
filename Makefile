@@ -64,6 +64,25 @@ help:
 	@echo "  cs-gpu            Open HPC/GPU cheatsheet"
 	@echo "  cs-coreweave      Open CoreWeave platform cheatsheet"
 	@echo ""
+	@echo "$(BOLD)PYTHON API PROBLEMS$(RESET)"
+	@echo "  api-server        Start practice API server (port 8080)"
+	@echo "  api-p01           Show p01 problem (POST /shutdown + JSON parse)"
+	@echo "  api-p01-solution  Run p01 solution"
+	@echo "  api-p02-solution  Run p02 solution (poll job until complete)"
+	@echo "  api-p03-solution  Run p03 solution (auth token + session)"
+	@echo "  api-p04-solution  Run p04 solution (paginate all items)"
+	@echo "  api-p05-solution  Run p05 solution (retry + exponential backoff)"
+	@echo ""
+	@echo "$(BOLD)PYTHON ASYNC / CONCURRENCY$(RESET)"
+	@echo "  async-c01         Async HTTP with asyncio.gather + aiohttp"
+	@echo "  async-c02         gather vs wait — exception propagation"
+	@echo "  async-c03         Producer-consumer with asyncio.Queue"
+	@echo "  async-c04         Timeout and cancellation (wait_for, shield)"
+	@echo "  async-c05-broken  Race condition demo (intentionally broken)"
+	@echo "  async-c05         Race condition fix (Lock, asyncio.Lock)"
+	@echo "  async-c06         ThreadPoolExecutor vs ProcessPoolExecutor"
+	@echo "  async-c07         Semaphore rate limiting + token bucket"
+	@echo ""
 	@echo "$(BOLD)TOOLS$(RESET)"
 	@echo "  k9s               Launch k9s cluster explorer"
 	@echo "  debug-pod         Launch a netshoot debug pod in default namespace"
@@ -294,3 +313,75 @@ k9s:
 debug-pod:
 	kubectl run debug-$(shell date +%s) --image=nicolaka/netshoot --rm -it \
 	  -- bash
+
+# ── Python API Problems ───────────────────────────────────────────────────────
+.PHONY: api-server
+api-server:
+	@echo "Starting practice API server on http://localhost:8080 ..."
+	python "$(REPO_ROOT)/python-api-problems/server/server.py"
+
+.PHONY: api-p01
+api-p01:
+	@echo "$(BOLD)=== p01: Shutdown the Server ===$(RESET)"
+	@cat "$(REPO_ROOT)/python-api-problems/p01-shutdown/problem.md"
+	@echo ""
+	@echo "$(YELLOW)Start the server first: make api-server$(RESET)"
+	@echo "$(YELLOW)Edit: python-api-problems/p01-shutdown/starter.py$(RESET)"
+	@echo "$(YELLOW)Run : python python-api-problems/p01-shutdown/starter.py$(RESET)"
+
+.PHONY: api-p01-solution
+api-p01-solution: api-server-background
+	python "$(REPO_ROOT)/python-api-problems/p01-shutdown/solution.py"
+
+.PHONY: api-p02-solution
+api-p02-solution:
+	python "$(REPO_ROOT)/python-api-problems/p02-poll-job/solution.py"
+
+.PHONY: api-p03-solution
+api-p03-solution:
+	python "$(REPO_ROOT)/python-api-problems/p03-auth-token/solution.py"
+
+.PHONY: api-p04-solution
+api-p04-solution:
+	python "$(REPO_ROOT)/python-api-problems/p04-pagination/solution.py"
+
+.PHONY: api-p05-solution
+api-p05-solution:
+	python "$(REPO_ROOT)/python-api-problems/p05-retry-backoff/solution.py"
+
+api-server-background:
+	@python "$(REPO_ROOT)/python-api-problems/server/server.py" &
+	@sleep 0.5
+
+# ── Python Async ──────────────────────────────────────────────────────────────
+.PHONY: async-c01
+async-c01:
+	python "$(REPO_ROOT)/python-async/c01-async-http/solution.py"
+
+.PHONY: async-c02
+async-c02:
+	python "$(REPO_ROOT)/python-async/c02-gather-vs-wait/solution.py"
+
+.PHONY: async-c03
+async-c03:
+	python "$(REPO_ROOT)/python-async/c03-producer-consumer/solution.py"
+
+.PHONY: async-c04
+async-c04:
+	python "$(REPO_ROOT)/python-async/c04-timeout-cancel/solution.py"
+
+.PHONY: async-c05-broken
+async-c05-broken:
+	python "$(REPO_ROOT)/python-async/c05-race-condition/broken.py"
+
+.PHONY: async-c05
+async-c05:
+	python "$(REPO_ROOT)/python-async/c05-race-condition/solution.py"
+
+.PHONY: async-c06
+async-c06:
+	python "$(REPO_ROOT)/python-async/c06-executors/solution.py"
+
+.PHONY: async-c07
+async-c07:
+	python "$(REPO_ROOT)/python-async/c07-semaphore/solution.py"
