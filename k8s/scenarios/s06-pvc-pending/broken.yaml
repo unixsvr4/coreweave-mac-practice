@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: training-dataset
+spec:
+  storageClassName: weka-parallel-fs   # BUG: StorageClass doesn't exist on local cluster
+  accessModes:
+    - ReadWriteMany                     # BUG: local-path provisioner only supports RWO
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: training-job
+spec:
+  restartPolicy: Never
+  containers:
+    - name: trainer
+      image: busybox:1.36
+      command: ["sh", "-c", "ls /data && sleep 3600"]
+      volumeMounts:
+        - name: dataset
+          mountPath: /data
+  volumes:
+    - name: dataset
+      persistentVolumeClaim:
+        claimName: training-dataset

@@ -1,0 +1,69 @@
+# Priority class for GPU workloads
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-high-priority
+value: 1000000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "High priority for GPU training workloads"
+---
+# GPU namespace quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: gpu-quota
+  namespace: s11
+spec:
+  hard:
+    requests.nvidia.com/gpu: "8"
+    limits.nvidia.com/gpu: "8"
+    requests.memory: 640Gi
+    limits.memory: 640Gi
+    requests.cpu: "64"
+    limits.cpu: "64"
+---
+# H100 training job
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-trainer
+  namespace: s11
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: llm-trainer
+  template:
+    metadata:
+      labels:
+        app: llm-trainer
+    spec:
+      priorityClassName: gpu-high-priority
+      restartPolicy: Always
+      containers:
+        - name: trainer
+          image: busybox:1.36   # placeholder; real: nvcr.io/nvidia/pytorch:24.01-py3
+          command: ["sleep", "3600"]
+          resources:
+            limits:
+              nvidia.com/gpu: "4"
+              memory: 320Gi
+              cpu: "32"
+            requests:
+              nvidia.com/gpu: "4"
+              memory: 320Gi
+              cpu: "32"
+          env:
+            - name: NCCL_DEBUG
+              value: INFO
+            - name: NCCL_IB_DISABLE
+              value: "0"       # Use InfiniBand for NCCL (CoreWeave HPC)
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0,1,2,3"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-H100-SXM5-80GB

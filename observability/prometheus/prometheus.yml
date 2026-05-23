@@ -1,0 +1,49 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - "alert-rules.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Node exporter — host OS metrics
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["host.docker.internal:9100"]   # Mac: host.docker.internal works
+    # On Ubuntu: use the bridge gateway IP instead
+
+  # Grafana metrics
+  - job_name: "grafana"
+    static_configs:
+      - targets: ["grafana:3000"]
+    metrics_path: /metrics
+
+  # Kubernetes API server (if kubectl proxy is running)
+  # kubectl proxy --port=8001 &
+  - job_name: "kubernetes-apiservers"
+    static_configs:
+      - targets: ["host.docker.internal:8001"]
+    metrics_path: /metrics
+    honor_labels: true
+
+  # kube-state-metrics (if deployed in cluster)
+  # kubectl port-forward -n kube-system svc/kube-state-metrics 8080:8080 &
+  - job_name: "kube-state-metrics"
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+
+  # Node metrics via kubectl proxy
+  - job_name: "kubernetes-nodes"
+    static_configs:
+      - targets: ["host.docker.internal:8001"]
+    metrics_path: /api/v1/nodes/metrics

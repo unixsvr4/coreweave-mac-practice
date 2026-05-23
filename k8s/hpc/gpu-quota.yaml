@@ -1,0 +1,41 @@
+# GPU Namespace Resource Quota — CoreWeave customer allocation example
+# Represents a customer with 8× H100 allocation
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: gpu-customer-quota
+spec:
+  hard:
+    # GPU allocation
+    requests.nvidia.com/gpu: "8"
+    limits.nvidia.com/gpu: "8"
+    # CPU/Memory allocation (must still be set with GPU quota)
+    requests.cpu: "128"
+    requests.memory: 2Ti
+    limits.cpu: "256"
+    limits.memory: 4Ti
+    # Pod count
+    pods: "50"
+    # Persistent storage
+    requests.storage: 50Ti
+---
+# LimitRange — default limits for pods that don't specify them
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limits
+spec:
+  limits:
+    - type: Container
+      default:          # default limit if not specified
+        cpu: "2"
+        memory: 8Gi
+      defaultRequest:   # default request if not specified
+        cpu: "500m"
+        memory: 1Gi
+      max:              # max allowed
+        cpu: "64"
+        memory: 512Gi
+      min:              # min allowed
+        cpu: "100m"
+        memory: 128Mi

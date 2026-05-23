@@ -1,0 +1,13 @@
+.DS_Store
+*.swp
+*.swo
+*~
+__pycache__/
+*.pyc
+.terraform/
+*.tfstate
+*.tfstate.backup
+.env
+*.log
+grafana/data/
+prometheus/data/

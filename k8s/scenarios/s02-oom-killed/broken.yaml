@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: data-processor
+  labels:
+    app: data-processor
+spec:
+  restartPolicy: Always
+  containers:
+    - name: processor
+      image: python:3.11-slim
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          python3 -c "
+          import time
+          print('Starting data processing job...')
+          # Simulate loading a large dataset into memory
+          # This needs ~300MB but we only have 64Mi limit
+          data = []
+          chunk_size = 1024 * 1024  # 1MB chunks
+          for i in range(300):
+              data.append(bytearray(chunk_size))
+              print(f'Loaded chunk {i+1}/300 ({(i+1)}MB)')
+              time.sleep(0.05)
+          print('Processing complete')
+          time.sleep(3600)
+          "
+      resources:
+        requests:
+          memory: 32Mi
+          cpu: 100m
+        limits:
+          memory: 64Mi   # BUG: way too low — job needs ~300MB
+          cpu: 500m

@@ -1,0 +1,42 @@
+# HPC Priority Classes — CoreWeave-style
+# Apply: kubectl apply -f priority-classes.yaml
+
+# Tier 1: Production training jobs (preempts everything below)
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-production
+value: 2000000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Production GPU training — highest priority"
+---
+# Tier 2: Standard GPU jobs
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-standard
+value: 1000000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Standard GPU training/inference jobs"
+---
+# Tier 3: Development / low priority batch
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-batch
+value: 10000
+globalDefault: false
+preemptionPolicy: Never
+description: "Dev/batch GPU jobs — can be preempted"
+---
+# System services (non-preemptable)
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: system-critical
+value: 9999999
+globalDefault: false
+preemptionPolicy: Never
+description: "System-critical workloads — never preempted"

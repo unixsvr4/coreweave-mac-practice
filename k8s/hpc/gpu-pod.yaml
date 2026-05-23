@@ -1,0 +1,91 @@
+# Example GPU training pod — H100 SXM5, 4 GPUs
+# In practice cluster: stays Pending (no GPU node)
+# Use to practice reading GPU pod specs and debugging GPU scheduling
+apiVersion: v1
+kind: Pod
+metadata:
+  name: h100-training-example
+  labels:
+    app: llm-trainer
+    tier: production
+spec:
+  restartPolicy: Never
+  priorityClassName: gpu-production
+
+  # Scheduling constraints
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule    # required if GPU nodes have this taint
+
+  nodeSelector:
+    nvidia.com/gpu.product: NVIDIA-H100-SXM5-80GB   # pin to H100 nodes
+
+  affinity:
+    podAntiAffinity:        # spread training pods across nodes
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: llm-trainer
+            topologyKey: kubernetes.io/hostname
+
+  containers:
+    - name: trainer
+      image: nvcr.io/nvidia/pytorch:24.01-py3
+      imagePullPolicy: IfNotPresent
+
+      command: ["python3", "train.py"]
+      args:
+        - "--model=llama3-70b"
+        - "--batch-size=4"
+        - "--gradient-checkpoint"
+
+      resources:
+        limits:
+          nvidia.com/gpu: "4"   # 4 of 8 GPUs on the node
+          memory: 320Gi
+          cpu: "32"
+        requests:               # Must equal limits for GPU
+          nvidia.com/gpu: "4"
+          memory: 320Gi
+          cpu: "32"
+
+      env:
+        - name: NCCL_DEBUG
+          value: INFO
+        - name: NCCL_IB_DISABLE
+          value: "0"            # Enable InfiniBand for inter-node NCCL
+        - name: NCCL_SOCKET_IFNAME
+          value: "^lo,^docker"  # Exclude loopback/docker from NCCL
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0,1,2,3"
+
+      volumeMounts:
+        - name: training-data
+          mountPath: /data
+          readOnly: true
+        - name: checkpoint-storage
+          mountPath: /checkpoints
+
+      livenessProbe:
+        exec:
+          command: ["nvidia-smi"]
+        initialDelaySeconds: 30
+        periodSeconds: 60
+
+  volumes:
+    - name: training-data
+      persistentVolumeClaim:
+        claimName: training-dataset-pvc
+        readOnly: true
+    - name: checkpoint-storage
+      persistentVolumeClaim:
+        claimName: checkpoint-pvc
+
+  imagePullSecrets:
+    - name: ngc-registry-secret   # NGC credentials for nvcr.io
+
+  # Don't let k8s restart on GPU OOM — customer needs to know
+  terminationGracePeriodSeconds: 60

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-inference
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ml-inference
+  template:
+    metadata:
+      labels:
+        app: ml-inference
+    spec:
+      containers:
+        - name: inference-server
+          image: nvcr.io/nvidia/tritonserver:24.01-py3-sdk-NONEXISTENT  # BUG: tag doesn't exist
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+      imagePullSecrets:
+        - name: ngc-registry-secret-WRONG   # BUG: wrong secret name (or doesn't exist)
