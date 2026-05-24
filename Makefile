@@ -27,6 +27,7 @@ help:
 	@echo "  k8s-status        Show cluster status (nodes, system pods)"
 	@echo "  obs-up            Start Grafana + Prometheus + Alertmanager"
 	@echo "  obs-down          Stop the observability stack"
+	@echo "  promql-drill      Run 22 PromQL queries via curl — host, K8s, DNS, GPU, SLO"
 	@echo ""
 	@echo "$(BOLD)K8S SCENARIOS (run timed — target < 8 min each)$(RESET)"
 	@echo "  s01               CrashLoopBackOff — missing ConfigMap"
@@ -129,6 +130,11 @@ obs-down:
 .PHONY: obs-status
 obs-status:
 	docker compose -f "$(REPO_ROOT)/observability/docker-compose.yml" ps
+
+.PHONY: promql-drill
+promql-drill:
+	@echo "$(BOLD)Running PromQL drill against Prometheus (localhost:9090)...$(RESET)"
+	bash "$(REPO_ROOT)/observability/promql-drill.sh"
 
 # ── K8s Scenarios ─────────────────────────────────────────────────────────────
 .PHONY: s01

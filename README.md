@@ -14,8 +14,10 @@
 | `cheatsheets/` | 8 reference guides covering every topic the screen tests |
 | `k8s/scenarios/` | 12 live debugging scenarios (broken YAML + solution) |
 | `k8s/hpc/` | GPU pod spec, priority classes, resource quota examples |
-| `observability/` | Grafana + Prometheus + Alertmanager docker-compose stack |
+| `observability/` | Grafana + Prometheus + Alertmanager stack + `promql-drill.sh` |
 | `linux/` | Linux debugging exercises + system snapshot script |
+| `python-api-problems/` | 5 API scripting problems — POST /shutdown, poll jobs, auth, pagination, retry |
+| `python-async/` | 7 async/concurrency exercises — asyncio, threading, executors, semaphores |
 | `setup/` | Mac tooling installer |
 
 ---
@@ -68,7 +70,7 @@
 | Run scenario 11 (GPU mock) | `make s11` | 10 min |
 | Start observability stack | `make obs-up` | — |
 | Explore Grafana dashboard | `open http://localhost:3000` | 20 min |
-| Write 5 PromQL queries from memory | (practice) | 15 min |
+| Run PromQL drill (22 live queries) | `make promql-drill` | 15 min |
 | Apply HPC priority classes | `make hpc-apply` | 5 min |
 
 ### Day 4 — Full Mock Run
@@ -127,6 +129,7 @@ make linux-snapshot    # Full system debug snapshot
 # Observability
 make obs-up            # Start Grafana + Prometheus
 make obs-down          # Stop the stack
+make promql-drill      # Run 22 PromQL queries against live Prometheus + print results
 
 # HPC
 make hpc-apply         # Apply priority classes to cluster
@@ -141,6 +144,25 @@ make cs-storage        # Storage/PVC
 make cs-promql         # Prometheus PromQL + Grafana
 make cs-gpu            # HPC/GPU Kubernetes
 make cs-coreweave      # CoreWeave platform
+
+# Python API Problems (server must be running: make api-server)
+make api-server        # Start practice API on localhost:8080
+make api-p01           # Show p01 problem (shutdown + JSON parse)
+make api-p01-solution  # Run p01 solution
+make api-p02-solution  # Run p02 solution (poll job)
+make api-p03-solution  # Run p03 solution (auth token)
+make api-p04-solution  # Run p04 solution (paginate all items)
+make api-p05-solution  # Run p05 solution (retry + backoff)
+
+# Python Async / Concurrency
+make async-c01         # asyncio.gather — concurrent HTTP (sequential vs concurrent timing)
+make async-c02         # gather vs wait — exception propagation
+make async-c03         # producer-consumer — asyncio.Queue (fan-out, pipeline)
+make async-c04         # timeout + cancel — wait_for, shield, task.cancel()
+make async-c05-broken  # race condition demo (broken — see the lost updates)
+make async-c05         # race condition fix — threading.Lock, asyncio.Lock
+make async-c06         # ThreadPool vs ProcessPool — I/O vs CPU bound
+make async-c07         # Semaphore rate limiting + token bucket
 
 # Tools
 make k9s               # Launch k9s TUI
@@ -202,3 +224,9 @@ Pre-built dashboard: **CoreWeave Practice — K8s & Node Overview**
 | `cheatsheets/00-interview-strategy.md` | Read this the morning of the screen |
 | `cheatsheets/06-hpc-gpu.md` | CoreWeave's core differentiator |
 | `cheatsheets/07-coreweave-platform.md` | Company knowledge for the screen |
+| `observability/promql-drill.sh` | 22 live PromQL queries via curl — run with `make promql-drill` |
+| `python-api-problems/server/server.py` | Local API server (stdlib, no deps) — run with `make api-server` |
+| `python-api-problems/p*/starter.py` | Fill in your solution here |
+| `python-api-problems/p*/solution.py` | Reference solution with explanation |
+| `python-async/c*/solution.py` | Runnable async exercise — `make async-c01` through `async-c07` |
+| `python-async/c05-race-condition/broken.py` | Intentionally broken — run to see the race |
