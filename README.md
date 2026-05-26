@@ -86,6 +86,22 @@
 
 ---
 
+## OrbStack Behavior vs. Production Kubernetes
+
+OrbStack's local cluster handles some failure states differently than a real cloud cluster. Same root cause, different status string — the debug steps are identical.
+
+| Root cause | Production K8s | OrbStack |
+|------------|---------------|----------|
+| Missing ConfigMap/Secret volume | `ContainerCreating` stuck | `ContainerCreating` stuck |
+| Bad image / image pull fails | `ImagePullBackOff` | `ImagePullBackOff` |
+| Container exits non-zero repeatedly | `CrashLoopBackOff` | `CrashLoopBackOff` |
+| OOM kill (exit 137) | `OOMKilled` → `CrashLoopBackOff` | same |
+| No nodes match nodeSelector/taint | `Pending` | `Pending` |
+
+**Key point:** `ContainerCreating` stuck = the container never started, usually a volume mount problem (missing ConfigMap, Secret, or PVC). Always check `kubectl describe pod` → Events — the error is there even before a single log line exists.
+
+---
+
 ## Quick Reference — The 5-Step Pod Debug
 
 ```bash
