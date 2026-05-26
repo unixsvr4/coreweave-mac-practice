@@ -26,13 +26,20 @@ kubectl describe pod data-processor -n s02 | grep -A 5 Limits
 #   memory:  64Mi      ← WAY too low
 
 # Step 4: Check actual memory usage while running
-kubectl top pod data-processor -n s02
-# NAME             CPU(cores)   MEMORY(bytes)
-# data-processor   210m         61Mi          ← at limit and climbing
+# NOTE (OrbStack): this pod crashes in ~4s — too fast for metrics-server to scrape.
+# kubectl top will return NotFound. That's expected. Skip to Step 5.
+# On a real cluster with a slower OOM, you'd see:
+#   kubectl top pod data-processor -n s02
+#   NAME             CPU(cores)   MEMORY(bytes)
+#   data-processor   210m         61Mi          ← at limit and climbing
 
-# Step 5: Check kernel OOM logs (on host)
-# dmesg | grep -i oom   or   journalctl -k | grep oom
-# This confirms the kernel killed the process
+# Step 5: Check kernel OOM logs
+# On Linux host:   sudo dmesg | grep -i oom
+# On Mac/OrbStack: kubectl debug node/orbstack -it --image=busybox -- chroot /host dmesg | grep -i oom
+kubectl debug node/orbstack -it --image=busybox -- chroot /host dmesg | grep -i oom
+# [448506.163662] python3 invoked oom-killer: gfp_mask=...
+# [448506.164657] Memory cgroup out of memory: Killed process ... (python3) anon-rss:65276kB oom_score_adj:996
+# This confirms the kernel cgroup OOM killer terminated the process
 
 # Step 6: Determine how much memory the job actually needs
 # From the code: 300 × 1MB chunks = ~300MB minimum
