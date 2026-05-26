@@ -7,16 +7,15 @@
 kubectl get pods -n s04
 # ml-inference-XXXXX   0/1   ImagePullBackOff   0   2m
 
-# Step 2: Describe pod — Events are key here
-kubectl describe pod -n s04 -l app=ml-inference
-# Events:
-#   Warning  Failed   2m   kubelet  Failed to pull image "nvcr.io/nvidia/tritonserver:24.01-py3-sdk-NONEXISTENT":
-#                          Error response from daemon: manifest for nvcr.io/nvidia/tritonserver:24.01-py3-sdk-NONEXISTENT
-#                          not found: manifest unknown
-#   Warning  Failed   2m   kubelet  Error: ErrImagePull
-# AND/OR:
-#   Warning  Failed        unauthorized: authentication required
-#   → imagePullSecret exists but wrong name
+# Step 2: Get events — more reliable than describe (events expire after ~1h but kubectl get events always works)
+kubectl get events -n s04 --sort-by=.lastTimestamp
+# Warning  Failed  pod/ml-inference-...  Failed to pull image "nvcr.io/nvidia/tritonserver:24.01-py3-sdk-NONEXISTENT":
+#                  manifest unknown → bad image tag
+# Warning  FailedToRetrieveImagePullSecret  pod/ml-inference-...
+#                  Unable to retrieve some image pull secrets (ngc-registry-secret-WRONG) → wrong secret name
+
+# describe also works if events haven't expired yet:
+kubectl describe pod -n s04 -l app=ml-inference | tail -20
 
 # Step 3: Check if imagePullSecret exists
 kubectl get secret -n s04 | grep ngc

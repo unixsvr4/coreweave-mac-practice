@@ -112,9 +112,9 @@ OrbStack's local cluster handles some failure states differently than a real clo
 
 ```bash
 kubectl get pod <name> -n <ns> -o wide            # state, node, IP
-kubectl describe pod <name> -n <ns>               # Events section first
+kubectl describe pod <name> -n <ns>               # Events section first (expires ~1h)
+kubectl get events -n <ns> --sort-by=.lastTimestamp  # use this if describe shows no Events
 kubectl logs <name> -n <ns> [--previous]          # container output
-kubectl get events -n <ns> --sort-by=.lastTimestamp  # timeline
 kubectl debug pod/<name> -it --image=busybox      # interactive probe
 ```
 
