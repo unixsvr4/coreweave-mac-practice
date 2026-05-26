@@ -214,6 +214,22 @@ Pre-built dashboard: **CoreWeave Practice — K8s & Node Overview**
 
 ---
 
+## Cleanup — After Practice
+
+```bash
+# Remove all scenario namespaces
+make clean-scenarios
+
+# Stop the observability stack
+make obs-down
+
+# Remove orphaned OPA Gatekeeper webhook (left behind if Gatekeeper was ever installed)
+# Without this, kubectl create will fail with InternalError on webhook calls
+kubectl delete validatingwebhookconfiguration gatekeeper-validating-webhook-configuration 2>/dev/null || true
+```
+
+---
+
 ## File Naming
 
 | File | Purpose |
