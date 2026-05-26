@@ -46,11 +46,9 @@ kubectl debug node/orbstack -it --image=busybox -- chroot /host dmesg | grep -i 
 # Add overhead: Python runtime ~50MB, safety margin 25%
 # Recommended: 512Mi
 
-# Fix: increase memory limit
-kubectl patch pod data-processor -n s02 --type='json' \
-  -p='[{"op":"replace","path":"/spec/containers/0/resources/limits/memory","value":"512Mi"},
-       {"op":"replace","path":"/spec/containers/0/resources/requests/memory","value":"384Mi"}]'
-# Note: Pods are immutable on resources — need to delete and recreate
+# Fix: pods are immutable on resources — must delete and recreate
+# See "Fixed YAML" section below for the full apply command
+kubectl delete pod data-processor -n s02
 ```
 
 ## Root Cause
