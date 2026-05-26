@@ -27,6 +27,12 @@
 - **OrbStack** — provides Docker + a real local Kubernetes cluster: https://orbstack.dev
 - **Homebrew** — package manager for everything else
 - `bash setup/install-tools.sh` — installs kubectl, helm, k9s, kubectx, jq, stern
+- **Metrics Server** — required for `kubectl top` (s02 OOMKilled scenario); install once:
+  ```bash
+  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  kubectl patch deployment metrics-server -n kube-system --type='json' \
+    -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+  ```
 
 ---
 
