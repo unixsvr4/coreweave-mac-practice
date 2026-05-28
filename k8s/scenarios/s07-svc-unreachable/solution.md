@@ -27,9 +27,12 @@ kubectl get svc inference-api-svc -n s07 -o jsonpath='{.spec.ports}'
 # [{"name":"http","port":80,"targetPort":8080}]
 # → targetPort=8080 but nginx listens on 80
 
-# Step 5: Verify nginx port
-kubectl exec -n s07 $(kubectl get pod -n s07 -o name | head -1) -- ss -tlnp
-# Shows: *:80   (not 8080)
+# Step 5: Verify nginx port (ss not available in slim nginx image — use cat /etc/nginx/conf.d/default.conf)
+kubectl exec -n s07 $(kubectl get pod -n s07 -o name | head -1) -- cat /etc/nginx/conf.d/default.conf | grep listen
+# listen  80;
+# OR check the pod spec directly — faster and always works:
+kubectl get pod -n s07 $(kubectl get pod -n s07 -o name | head -1 | cut -d/ -f2) -o jsonpath='{.spec.containers[*].ports}'
+# [{"containerPort":80,"protocol":"TCP"}]  ← container exposes 80, not 8080
 
 # Fix both bugs
 kubectl patch svc inference-api-svc -n s07 --type='json' -p='[
@@ -50,13 +53,16 @@ kubectl get endpointslices -n s07
 
 ## What to Tell the Customer
 
-> "We found two issues. First, your service selector has `version: v1` but your deployment pods are labeled `version: v2` — the service has no matching backends. Second, the service's `targetPort` is 8080 but your nginx container listens on port 80. Both are now fixed and your endpoints are populated with your pod IPs. To prevent this: I recommend using the deployment's `spec.selector` labels as the single source of truth for service selectors, and verifying `targetPort` matches your container's actual listening port — this can be done with `kubectl exec <pod> -- ss -tlnp`."
+> "We found two issues. First, your service selector has `version: v1` but your deployment pods are labeled `version: v2` — the service has no matching backends. Second, the service's `targetPort` is 8080 but your nginx container listens on port 80. Both are now fixed and your endpoints are populated with your pod IPs. To prevent this: I recommend using the deployment's `spec.selector` labels as the single source of truth for service selectors, and verifying `targetPort` matches your container's actual listening port — check `kubectl get pod <name> -o jsonpath='{.spec.containers[*].ports}'` or `kubectl exec <pod> -- cat /etc/nginx/conf.d/default.conf`."
 
 ## Test After Fix
 
 ```bash
-# Port-forward and test
+# Port-forward and test (sleep 1 lets the forwarder bind before curl fires)
 kubectl port-forward svc/inference-api-svc 8080:80 -n s07 &
-curl http://localhost:8080/
+sleep 1 && curl http://localhost:8080/
 # Should return nginx 200 OK
+
+# Cleanup port-forward when done
+kill %1 2>/dev/null || true
 ```
