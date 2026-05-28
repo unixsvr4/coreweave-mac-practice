@@ -7,10 +7,10 @@
 kubectl get pods -n s07
 # Both pods Running ✓
 
-# Step 2: Check endpoints — KEY INSIGHT
-kubectl get endpoints -n s07
-# NAME                 ENDPOINTS   AGE
-# inference-api-svc   <none>      3m
+# Step 2: Check endpointslices — KEY INSIGHT
+kubectl get endpointslices -n s07
+# NAME                          ADDRESSTYPE   PORTS   ENDPOINTS   AGE
+# inference-api-svc-xxxxx       IPv4          8080    <none>      3m
 # ← <none> means NO pods match the service selector
 
 # Step 3: Compare service selector vs pod labels
@@ -37,10 +37,10 @@ kubectl patch svc inference-api-svc -n s07 --type='json' -p='[
   {"op":"replace","path":"/spec/ports/0/targetPort","value":80}
 ]'
 
-# Verify endpoints are populated now
-kubectl get endpoints -n s07
-# NAME                 ENDPOINTS                         AGE
-# inference-api-svc   10.244.0.5:80,10.244.0.6:80      5m
+# Verify endpointslices are populated now
+kubectl get endpointslices -n s07
+# NAME                        ADDRESSTYPE   PORTS   ENDPOINTS                   AGE
+# inference-api-svc-xxxxx     IPv4          80      10.244.0.5,10.244.0.6       5m
 ```
 
 ## Root Causes

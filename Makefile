@@ -187,7 +187,7 @@ s07:
 	@echo "$(BOLD)=== Scenario 07: Service Unreachable ===$(RESET)"
 	kubectl create namespace s07 2>/dev/null || true
 	kubectl apply -f "$(REPO_ROOT)/k8s/scenarios/s07-svc-unreachable/broken.yaml" -n s07
-	@echo "$(YELLOW)→ kubectl get pods,svc,endpoints -n s07$(RESET)"
+	@echo "$(YELLOW)→ kubectl get pods,svc,endpointslices -n s07$(RESET)"
 
 .PHONY: s08
 s08:

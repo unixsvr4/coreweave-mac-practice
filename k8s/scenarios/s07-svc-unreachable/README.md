@@ -9,7 +9,7 @@
 ```bash
 kubectl create namespace s07
 kubectl apply -f broken.yaml -n s07
-kubectl get pods,svc,endpoints -n s07
+kubectl get pods,svc,endpointslices -n s07
 ```
 
 ## Your Mission
