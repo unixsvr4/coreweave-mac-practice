@@ -19,12 +19,12 @@ kubectl describe networkpolicy default-deny-all -n s09
 # ← "Allowing <none>" = denying all
 
 # Step 3: Test connectivity from a debug pod
-kubectl run debug -n s09 --image=busybox --rm -it -- wget -qO- --timeout=5 http://api-server-svc/
+kubectl run debug -n s09 --image=busybox --rm -it --restart=Never -- wget -qO- --timeout=5 http://api-server-svc/
 # wget: can't connect to remote host: Connection timed out
 # ← Confirmed: deny-all is blocking intra-namespace traffic
 
 # Step 4: Also test DNS
-kubectl run debug -n s09 --image=busybox --rm -it -- nslookup api-server-svc
+kubectl run debug -n s09 --image=busybox --rm -it --restart=Never -- nslookup api-server-svc
 # Connection timed out  ← DNS blocked too (egress to port 53 blocked)
 ```
 
