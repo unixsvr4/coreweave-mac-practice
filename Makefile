@@ -192,8 +192,9 @@ s07:
 .PHONY: s08
 s08:
 	@echo "$(BOLD)=== Scenario 08: DNS Broken ===$(RESET)"
-	kubectl create namespace s08-frontend 2>/dev/null || true
-	kubectl create namespace s08-backend 2>/dev/null || true
+	kubectl delete namespace s08-frontend s08-backend 2>/dev/null || true
+	kubectl create namespace s08-frontend
+	kubectl create namespace s08-backend
 	kubectl apply -f "$(REPO_ROOT)/k8s/scenarios/s08-dns-broken/broken.yaml"
 	@echo "$(YELLOW)→ kubectl logs frontend -n s08-frontend -f$(RESET)"
 
