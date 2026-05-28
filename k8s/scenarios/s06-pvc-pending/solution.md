@@ -16,19 +16,19 @@ kubectl describe pvc training-dataset -n s06
 
 # Step 3: Check what StorageClasses exist
 kubectl get storageclass
-# NAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE
-# standard (default)   docker.io/hostpath      Delete          Immediate
-# OR: local-path       rancher.io/local-path   Delete          WaitForFirstConsumer
+# OrbStack output:
+# NAME                   PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE
+# local-path (default)   rancher.io/local-path   Delete          WaitForFirstConsumer
+#
+# NOTE: OrbStack only has local-path. Real CoreWeave has weka-nvme, pure-block, local-nvme.
+# WaitForFirstConsumer = PVC stays Pending until a pod is scheduled (by design, not a bug).
 
 # Step 4: Check what access modes local-path supports
 kubectl describe storageclass local-path
-# local-path only supports ReadWriteOnce (RWO) — single node
+# local-path only supports ReadWriteOnce (RWO) — single node, no shared access
 
-# Fix 1: Use an existing StorageClass
-kubectl patch pvc training-dataset -n s06 -p '{"spec":{"storageClassName":"standard"}}'
-# Note: storageClassName is immutable after creation — must delete and recreate
-
-# Fix 2: Fix access mode too
+# Fix: storageClassName is immutable after creation — must delete and recreate
+# Also fix access mode (RWX → RWO; local-path only supports ReadWriteOnce)
 kubectl delete pvc training-dataset -n s06
 kubectl apply -f - -n s06 <<'EOF'
 apiVersion: v1
@@ -36,13 +36,16 @@ kind: PersistentVolumeClaim
 metadata:
   name: training-dataset
 spec:
-  storageClassName: standard   # use existing SC
+  storageClassName: local-path
   accessModes:
-    - ReadWriteOnce             # local-path supports RWO
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi             # also reduce to realistic local size
+      storage: 1Gi
 EOF
+# PVC will show Pending until the training-job pod is scheduled — that is expected
+# with WaitForFirstConsumer binding mode. Check pod + PVC together:
+kubectl get pods,pvc -n s06
 ```
 
 ## Root Causes

@@ -179,7 +179,8 @@ s06:
 	@echo "$(BOLD)=== Scenario 06: PVC Stuck Pending ===$(RESET)"
 	kubectl create namespace s06 2>/dev/null || true
 	kubectl apply -f "$(REPO_ROOT)/k8s/scenarios/s06-pvc-pending/broken.yaml" -n s06
-	@echo "$(YELLOW)→ kubectl get pvc,pods -n s06 -w$(RESET)"
+	@echo "$(YELLOW)→ kubectl get pvc,pods -n s06$(RESET)"
+	@echo "$(YELLOW)→ watch -n 2 'kubectl get pvc,pods -n s06'   # live watch$(RESET)"
 
 .PHONY: s07
 s07:

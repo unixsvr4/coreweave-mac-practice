@@ -9,7 +9,10 @@
 ```bash
 kubectl create namespace s06
 kubectl apply -f broken.yaml -n s06
-kubectl get pvc,pods -n s06 -w
+kubectl get pvc -n s06
+kubectl get pods -n s06
+# To watch both live (watch re-runs the full command every 2s):
+watch -n 2 'kubectl get pvc,pods -n s06'
 ```
 
 ## Your Mission
