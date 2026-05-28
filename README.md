@@ -1,8 +1,8 @@
-# coreweave-mac-practice
+# coreweave-practice
 
-**Platform:** Mac M1/M2/M3 + OrbStack  
-**Role:** Senior Cloud Support Engineer — CoreWeave  
-**Screen:** 90-minute technical screen  
+**Platforms:** Mac M1/M2/M3 (OrbStack) · Linux Ubuntu 24.04 (minikube)
+**Role:** Senior Cloud Support Engineer — CoreWeave
+**Screen:** 90-minute technical screen
 **Deadline:** 4 days
 
 ---
@@ -18,21 +18,52 @@
 | `linux/` | Linux debugging exercises + system snapshot script |
 | `python-api-problems/` | 5 API scripting problems — POST /shutdown, poll jobs, auth, pagination, retry |
 | `python-async/` | 7 async/concurrency exercises — asyncio, threading, executors, semaphores |
-| `setup/` | Mac tooling installer |
+| `setup/` | Tooling installers (Mac + Linux) |
 
 ---
 
 ## Prerequisites
 
-- **OrbStack** — provides Docker + a real local Kubernetes cluster: https://orbstack.dev
-- **Homebrew** — package manager for everything else
-- `bash setup/install-tools.sh` — installs kubectl, helm, k9s, kubectx, jq, stern
-- **Metrics Server** — required for `kubectl top` (s02 OOMKilled scenario); install once:
-  ```bash
-  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-  kubectl patch deployment metrics-server -n kube-system --type='json' \
-    -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
-  ```
+### Mac M1/M2/M3
+
+1. **OrbStack** — provides Docker + a real local Kubernetes cluster: https://orbstack.dev
+2. **Homebrew** — package manager: https://brew.sh
+3. Install all tools:
+   ```bash
+   bash setup/install-tools.sh
+   ```
+4. Install Metrics Server (required for `kubectl top` in s02):
+   ```bash
+   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+   kubectl patch deployment metrics-server -n kube-system --type='json' \
+     -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+   ```
+
+### Linux Ubuntu 24.04
+
+1. **Docker** — required for minikube's Docker driver:
+   ```bash
+   sudo apt-get update && sudo apt-get install -y docker.io
+   sudo usermod -aG docker $USER && newgrp docker
+   ```
+2. **minikube** — local Kubernetes cluster:
+   ```bash
+   curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+   sudo install minikube-linux-amd64 /usr/local/bin/minikube
+   minikube start --driver=docker --cpus=4 --memory=8192
+   ```
+3. Install all CLI tools:
+   ```bash
+   bash setup/install-tools-linux.sh
+   ```
+4. Install Metrics Server (same as Mac):
+   ```bash
+   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+   kubectl patch deployment metrics-server -n kube-system --type='json' \
+     -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+   ```
+
+> **Note:** The `Makefile` expects the repo directory to be named `coreweave-mac-practice`. If you clone it under a different name, `make` commands will error. Rename the directory or update the `GUARD` line in the Makefile.
 
 ---
 
@@ -52,6 +83,23 @@
 | Linux CPU exercise | `make linux-cpu` | 10 min |
 | Review all solutions | — | 20 min |
 
+**End of Day 1 — Shutdown**
+
+```bash
+# Both platforms — delete scenario namespaces
+make clean-scenarios
+
+# Mac (OrbStack) — K8s keeps running in the background (low overhead)
+# To stop K8s only:   orb stop k8s
+# To quit completely: quit OrbStack from the macOS menu bar
+
+# Linux (minikube) — stop the cluster, preserves state for tomorrow
+minikube stop
+# Hard reset (slower start tomorrow):  minikube delete --all
+```
+
+---
+
 ### Day 2 — Networking + Storage + DNS
 
 | Task | Command | Time |
@@ -66,6 +114,22 @@
 | Linux memory exercise | `make linux-mem` | 10 min |
 | Network debug walkthrough | `make linux-net` | 15 min |
 
+**End of Day 2 — Shutdown**
+
+```bash
+# Both platforms — delete scenario namespaces
+make clean-scenarios
+
+# Mac (OrbStack)
+# To stop K8s only:   orb stop k8s
+# To quit completely: quit OrbStack from the macOS menu bar
+
+# Linux (minikube)
+minikube stop
+```
+
+---
+
 ### Day 3 — GPU/HPC + Observability
 
 | Task | Command | Time |
@@ -79,6 +143,27 @@
 | Run PromQL drill (22 live queries) | `make promql-drill` | 15 min |
 | Apply HPC priority classes | `make hpc-apply` | 5 min |
 
+> **Linux:** Replace `open http://localhost:3000` with `xdg-open http://localhost:3000` or just visit it in a browser manually.
+
+**End of Day 3 — Shutdown**
+
+```bash
+# Both platforms — stop Grafana + Prometheus + Alertmanager (Docker containers)
+make obs-down
+
+# Both platforms — delete scenario namespaces
+make clean-scenarios
+
+# Mac (OrbStack)
+# To stop K8s only:   orb stop k8s
+# To quit completely: quit OrbStack from the macOS menu bar
+
+# Linux (minikube)
+minikube stop
+```
+
+---
+
 ### Day 4 — Full Mock Run
 
 | Task | Time |
@@ -90,21 +175,57 @@
 | Review CoreWeave platform notes + questions to ask | 15 min |
 | Light review of solutions you got stuck on | 20 min |
 
+**End of Day 4 — Full Shutdown**
+
+```bash
+# Both platforms — full cleanup
+make clean-scenarios
+make obs-down 2>/dev/null || true
+
+# Remove orphaned OPA Gatekeeper webhook if present (blocks kubectl create if left behind)
+kubectl delete validatingwebhookconfiguration gatekeeper-validating-webhook-configuration 2>/dev/null || true
+
+# Mac (OrbStack) — stop or quit
+orb stop k8s            # stop K8s only, keep OrbStack
+# or quit OrbStack from the macOS menu bar to stop everything
+
+# Linux (minikube) — stop or delete
+minikube stop           # stop, preserves cluster state
+# minikube delete --all # wipe cluster entirely (clean slate)
+```
+
 ---
 
-## OrbStack Behavior vs. Production Kubernetes
+## Platform Behavior Reference
 
-OrbStack's local cluster handles some failure states differently than a real cloud cluster. Same root cause, different status string — the debug steps are identical.
+### OrbStack (Mac) vs minikube (Linux) vs Production Kubernetes
 
-| Root cause | Production K8s | OrbStack |
-|------------|---------------|----------|
-| Missing ConfigMap/Secret volume | `ContainerCreating` stuck | `ContainerCreating` stuck |
-| Bad image / image pull fails | `ImagePullBackOff` | `ImagePullBackOff` |
-| Container exits non-zero repeatedly | `CrashLoopBackOff` | `CrashLoopBackOff` |
-| OOM kill (exit 137) | `OOMKilled` → `CrashLoopBackOff` | same |
-| No nodes match nodeSelector/taint | `Pending` | `Pending` |
+| Root cause | Production K8s | OrbStack (Mac) | minikube (Linux) |
+|------------|---------------|----------------|-----------------|
+| Missing ConfigMap/Secret volume | `ContainerCreating` stuck | `ContainerCreating` stuck | `ContainerCreating` stuck |
+| Bad image / image pull fails | `ImagePullBackOff` | `ImagePullBackOff` | `ImagePullBackOff` |
+| Container exits non-zero repeatedly | `CrashLoopBackOff` | `CrashLoopBackOff` | `CrashLoopBackOff` |
+| OOM kill (exit 137) | `OOMKilled` → `CrashLoopBackOff` | same | same |
+| No nodes match nodeSelector/taint | `Pending` | `Pending` | `Pending` |
 
 **Key point:** `ContainerCreating` stuck = the container never started, usually a volume mount problem (missing ConfigMap, Secret, or PVC). Always check `kubectl describe pod` → Events — the error is there even before a single log line exists.
+
+**Events expire after ~1h.** If `kubectl describe pod` shows no Events, use the fallback:
+```bash
+kubectl get events -n <ns> --sort-by=.lastTimestamp
+```
+
+### Node OOM Logs
+
+| Platform | Command |
+|----------|---------|
+| Mac (OrbStack) | `kubectl debug node/orbstack -it --image=busybox -- chroot /host dmesg \| grep -i oom` |
+| Linux (minikube) | `kubectl debug node/minikube -it --image=busybox -- chroot /host dmesg \| grep -i oom` |
+| Linux (direct host) | `sudo dmesg \| grep -i oom` or `journalctl -k \| grep oom` |
+
+### kubectl top Limitation
+
+`kubectl top pod <name>` returns `NotFound` for pods that crash in < 15s (faster than the metrics scrape interval). This is expected on both platforms. Use `kubectl describe pod` → `Last State: OOMKilled, Exit Code: 137` instead.
 
 ---
 
@@ -120,10 +241,26 @@ kubectl debug pod/<name> -it --image=busybox      # interactive probe
 
 ---
 
+## Observability Stack
+
+```
+http://localhost:3000   Grafana        (admin / admin)
+http://localhost:9090   Prometheus
+http://localhost:9093   Alertmanager
+http://localhost:9100   node-exporter metrics
+```
+
+Start: `make obs-up`
+Stop: `make obs-down`
+
+Pre-built dashboard: **CoreWeave Practice — K8s & Node Overview**
+
+---
+
 ## All Make Commands
 
 ```bash
-make install           # Install kubectl, helm, k9s, kubectx, jq, stern
+make install           # Mac: Install kubectl, helm, k9s, kubectx, jq, stern via Homebrew
 make k8s-status        # Show cluster state
 
 # Scenarios
@@ -193,6 +330,28 @@ make debug-pod         # Launch nicolaka/netshoot debug pod
 
 ---
 
+## Cleanup — After Practice
+
+```bash
+# Remove all scenario namespaces
+make clean-scenarios
+
+# Stop the observability stack
+make obs-down
+
+# Remove orphaned OPA Gatekeeper webhook (left behind if Gatekeeper was ever installed)
+# Without this, kubectl create will fail with InternalError on webhook calls
+kubectl delete validatingwebhookconfiguration gatekeeper-validating-webhook-configuration 2>/dev/null || true
+
+# Mac — stop OrbStack K8s
+orb stop k8s
+
+# Linux — stop minikube
+minikube stop
+```
+
+---
+
 ## What CoreWeave's Screen Tests
 
 Based on JD analysis + Glassdoor/Taro research:
@@ -217,38 +376,6 @@ Based on JD analysis + Glassdoor/Taro research:
 - WEKA filesystem for RWX dataset storage
 - Priority classes + preemption for HPC job scheduling
 - Error budget-based SLO monitoring
-
----
-
-## Observability Stack
-
-```
-http://localhost:3000   Grafana   (admin / admin)
-http://localhost:9090   Prometheus
-http://localhost:9093   Alertmanager
-http://localhost:9100   node-exporter metrics
-```
-
-Start: `make obs-up`  
-Stop: `make obs-down`
-
-Pre-built dashboard: **CoreWeave Practice — K8s & Node Overview**
-
----
-
-## Cleanup — After Practice
-
-```bash
-# Remove all scenario namespaces
-make clean-scenarios
-
-# Stop the observability stack
-make obs-down
-
-# Remove orphaned OPA Gatekeeper webhook (left behind if Gatekeeper was ever installed)
-# Without this, kubectl create will fail with InternalError on webhook calls
-kubectl delete validatingwebhookconfiguration gatekeeper-validating-webhook-configuration 2>/dev/null || true
-```
 
 ---
 

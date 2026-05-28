@@ -64,6 +64,7 @@ spec:
 EOF
 
 # Fix Pod 2: remove or correct the nodeSelector
+# NOTE (OrbStack): use low memory — the node is small. On real CoreWeave use 4Gi+.
 kubectl delete pod training-job-worker -n s05
 kubectl apply -f - -n s05 <<'EOF'
 apiVersion: v1
@@ -77,8 +78,8 @@ spec:
       image: busybox:1.36
       command: ["sleep", "3600"]
       resources:
-        limits: {cpu: "2", memory: 4Gi}
-        requests: {cpu: "2", memory: 4Gi}
+        limits: {cpu: "500m", memory: 512Mi}
+        requests: {cpu: "500m", memory: 512Mi}
   # nodeSelector removed — or set to an existing label
 EOF
 ```
